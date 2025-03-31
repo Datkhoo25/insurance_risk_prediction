@@ -34,7 +34,8 @@ def get_prediction(data):
 
 
 # Test 1: Ensure predictions are within the range 1-8
-def test_prediction_range(df):
+def test_prediction_range():
+    df = raw_df
     """Test that the predictions are within the range [1, 8]."""
     for i, row in df.head(1000).iterrows():  # Test only first 1000 rows
         # Separate the features (X) from the target (Y)
@@ -51,7 +52,8 @@ def test_prediction_range(df):
 
 
 # Test 2: Ensure at least 50% accuracy on a sample of 1000 rows
-def test_sample_accuracy(df):
+def test_sample_accuracy():
+    df = raw_df
     """Ensure the model has at least 50% accuracy on a sample set."""
     num_correct = 0
     num_samples = 1000  # Test on 1000 samples

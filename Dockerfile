@@ -1,22 +1,24 @@
-# Start with a Python 3.12 image
 FROM python:3.12-slim
 
 # Install Git LFS
 RUN apt-get update && apt-get install -y git-lfs && git lfs install
-RUN cat /etc/os-release
 
-# Set the working directory inside the container
+# Set the working directory
 WORKDIR /app
 
-# Copy the current directory content into the container at /app
+# Copy requirements.txt first to leverage caching
+COPY requirements.txt /app/
+
+# Install dependencies
+RUN pip install --upgrade pip
+RUN pip install -r /app/requirements.txt
+
+# Now copy the rest of the application
 COPY . /app
 
-# Install the dependencies
-RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
-
-# Expose the port Flask will run on
+# Expose Flask port
 EXPOSE 5000
 
 # Command to run the app
 CMD ["python", "app.py"]
+
