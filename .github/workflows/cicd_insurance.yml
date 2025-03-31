@@ -23,7 +23,7 @@ jobs:
           git lfs install
           git lfs pull
 
-      # Step 3: Set up Docker Buildx (for building multi-platform images)
+      # Step 3: Set up Docker Buildx (for build multi-platform images)
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
 
