@@ -1,1 +1,3 @@
 venv/
+best_xgb_model.pkl
+full_pipeline.pkl
