@@ -1,10 +1,11 @@
+from app import app
 import requests
 import json
 import numpy as np
 import pickle
 import pandas as pd
 
-# Load the original data
+# Load the original data in order to create a test data
 raw_data_path = r"C:\Users\lucas\PycharmProjects\pythonProject4\risk_prediction\train.csv"
 raw_df = pd.read_csv(raw_data_path, index_col='Id')
 
@@ -60,3 +61,12 @@ for index, row in fake_data_df.iterrows():
     data = row.to_dict()  # Convert the row to a dictionary
     print(f"Predicting for row {index}: {data}")
     get_prediction(data)
+
+
+
+
+def test_home():
+    response=app.test_client().get("/")
+
+    assert response.status_code==200
+    assert (response.data > 0) AND (response.data < 7)
