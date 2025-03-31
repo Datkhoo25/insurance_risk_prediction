@@ -1,6 +1,5 @@
-name: Python CI
+name: Python CI_
 
-# Trigger the workflow on any push to the main branch or pull request
 on:
   push:
     branches:
@@ -33,15 +32,15 @@ jobs:
         run: |
           docker build -t my-flask-app .
 
-      # Step 5: Run Docker container
-      - name: Run Docker container
+      # Step 5: Run Docker container (Flask app)
+      - name: Run Docker container (Flask app)
         run: |
           docker run -d -p 5000:5000 --name flask-app my-flask-app
 
-      # Step 6: Run tests (inside Docker container)
-      - name: Run tests
+      # Step 6: Run tests (inside the running container)
+      - name: Run tests (inside the running container)
         run: |
-          docker exec flask-app pytest
+          docker exec flask-app pytest  # Execute pytest inside the running container
 
       # Step 7: Stop and remove the container after tests
       - name: Stop Docker container
