@@ -21,9 +21,10 @@ def load_model(model_path):
         print(f"Error loading model: {e}")
         return None
 
+
 # ✅ Use raw strings or forward slashes in file paths
-pipeline_path = r"C:\Users\lucas\PycharmProjects\pythonProject4\risk_prediction\full_pipeline.pkl"
-model_path = r"C:\Users\lucas\PycharmProjects\pythonProject4\risk_prediction\best_xgb_model.pkl"
+pipeline_path = r"full_pipeline.pkl"
+model_path = r"best_xgb_model.pkl"
 
 loaded_pipeline = load_pipeline(pipeline_path)
 loaded_xgb_model = load_model(model_path)
