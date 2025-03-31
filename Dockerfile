@@ -1,6 +1,10 @@
 # Start with a Python 3.12 image
 FROM python:3.12-slim
 
+# Install Git LFS
+RUN apt-get update && apt-get install -y git-lfs && git lfs install
+RUN cat /etc/os-release
+
 # Set the working directory inside the container
 WORKDIR /app
 
