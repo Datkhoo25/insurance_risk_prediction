@@ -47,6 +47,14 @@ jobs:
       - name: Run tests (inside the running container)
         run: |
           docker exec flask-app pytest  # Execute pytest inside the running container
+          
+      # Step 6.5: Get container logs (CRITICAL FOR DEBUGGING)
+      - name: Display Flask App Logs
+        if: always() # Run this even if previous steps fail
+        run: |
+          echo "--- Flask App Logs ---"
+          docker logs flask-app 
+          echo "--- End Flask App Logs ---"
 
       # Step 7: Stop and remove the container after tests
       - name: Stop Docker container
