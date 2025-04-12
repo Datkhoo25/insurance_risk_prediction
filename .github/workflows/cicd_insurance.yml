@@ -19,6 +19,13 @@ jobs:
         with:
           lfs: true
 
+      #Step 2: Checking the presence of LFS files
+      - name: Verify LFS files in workspace
+        run: |
+          echo "Listing files in workspace:"
+          ls -lh
+          echo "Checking LFS status:"
+          git lfs status # Optional, but can be informative
 
       # Step 3: Set up Docker Buildx (for build multi-platform images)
       - name: Set up Docker Buildx
