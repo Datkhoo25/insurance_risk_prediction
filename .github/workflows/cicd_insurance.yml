@@ -13,15 +13,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Check out the code from the repository
+      # Step 1: Check out the code from the repository AND pull LFS files
       - name: Check out code
         uses: actions/checkout@v3
+        with:
+          lfs: true
 
-      # Step 2: Install Git LFS
-      - name: Install Git LFS
-        run: |
-          git lfs install
-          git lfs pull
 
       # Step 3: Set up Docker Buildx (for build multi-platform images)
       - name: Set up Docker Buildx
@@ -47,7 +44,7 @@ jobs:
       - name: Run tests (inside the running container)
         run: |
           docker exec flask-app pytest  # Execute pytest inside the running container
-          
+
       # Step 6.5: Get container logs (CRITICAL FOR DEBUGGING)
       - name: Display Flask App Logs
         if: always() # Run this even if previous steps fail
