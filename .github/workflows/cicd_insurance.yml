@@ -37,6 +37,12 @@ jobs:
         run: |
           docker run -d -p 5000:5000 --name flask-app my-flask-app
 
+      # Step 5.5: Wait for Flask app to start
+      - name: Wait for application to start
+        run: |
+          echo "Waiting for Flask app to be ready..."
+          sleep 15 # Adjust sleep time as needed (e.g., 10, 15, 20 seconds)
+
       # Step 6: Run tests (inside the running container)
       - name: Run tests (inside the running container)
         run: |
