@@ -122,3 +122,8 @@ git add .
 git commit -m "Add feature"
 git push origin feature_branch
 When your feature is ready for review, create a pull request on GitHub to merge your changes into the main branch.
+
+
+To checkout the publish docker file, please:
+bash
+docker pull kkhdocker348//insurence_flasktest-app:latest
