@@ -2,7 +2,7 @@ import requests
 import pandas as pd
 
 # API URL for local server
-API_URL = "http://127.0.0.1:5000/predict"
+API_URL = "http://127.0.0.1:8080/predict"
 
 # Load the original data (ensure it exists locally)
 GITHUB_RAW_URL = "https://raw.githubusercontent.com/Datkhoo25/insurance_risk_prediction/main/test.csv"
