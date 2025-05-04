@@ -151,7 +151,7 @@ jobs:
     # This job requires the 'build-push-ecr' job to complete successfully.
     needs: build-push-ecr
     # This job runs on your self-hosted runner where the application will be deployed.
-    runs-on: self-hosted # Make sure you have a self-hosted runner set up and registered
+    runs-on: self-hosted-ai-runner # Make sure you have a self-hosted runner set up and registered
 
     # Defines the steps within this job.
     steps:
