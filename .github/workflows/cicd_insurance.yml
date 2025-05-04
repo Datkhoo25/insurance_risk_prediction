@@ -184,6 +184,24 @@ jobs:
           echo "ECR_REPO_URI=${{ secrets.AWS_ECR_LOGIN_URI }}" >> $GITHUB_ENV
           echo "ECR_REPOSITORY=${{ secrets.ECR_REPOSITORY_NAME }}" >> $GITHUB_ENV
           echo "IMAGE_TAG=latest" >> $GITHUB_ENV # Or match the tag used in build-push-ecr
+      
+      
+      # --- TEMPORARY DEBUGGING STEP ---
+      # This step will print the values Docker will use (masked for security)
+      - name: Debug Image Reference Vars
+        run: |
+          echo "Debugging image reference variables:"
+          # Mask the potential secret values before echoing
+          echo "::add-mask::${{ secrets.AWS_ECR_LOGIN_URI }}"
+          echo "::add-mask::${{ secrets.ECR_REPOSITORY_NAME }}"
+          # Now echo the environment variables - they should appear masked in logs
+          echo "ECR_REPO_URI: $ECR_REPO_URI"
+          echo "ECR_REPOSITORY: $ECR_REPOSITORY"
+          echo "IMAGE_TAG: $IMAGE_TAG"
+          echo "Full Reference Format: $ECR_REPO_URI/$ECR_REPOSITORY:$IMAGE_TAG"
+
+
+
 
       # Pull the latest image from ECR to the self-hosted runner
       - name: Pull latest image from ECR
