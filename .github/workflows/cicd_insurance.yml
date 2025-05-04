@@ -1,97 +1,228 @@
-name: Python CI1
+# The name of this workflow. This name will appear in the GitHub Actions tab of your repository.
+name: Python CI/CD to AWS ECR and Self-Hosted
 
-
+# Specifies the events that trigger this workflow.
 on:
+  # Trigger on push to the main branch
   push:
     branches:
-      - '**'     # Run CI on all branches
+      - main
+    # Ignore pushes that only change the README (optional)
+    paths-ignore:
+      - 'README.md'
+  # Also trigger on pull requests to the main branch (optional, for CI part)
   pull_request:
     branches:
-      - main     # Also run CI on PRs to main
+      - main
+
+# Defines the permissions granted to the GITHUB_TOKEN for this workflow run.
+# 'id-token: write' is needed if you plan to use OIDC for AWS authentication (more secure).
+# 'contents: read' is needed to checkout the code.
+permissions:
+  id-token: write # Needed for OIDC authentication with AWS
+  contents: read  # Needed to checkout code
+
+# Defines the jobs that make up this workflow.
 jobs:
+  # This job performs the core Continuous Integration steps, including testing the application in a Docker container.
   test:
+    # The job runs on a GitHub-hosted Ubuntu runner.
     runs-on: ubuntu-latest
 
+    # Defines the steps within this job.
     steps:
       # Step 1: Check out the code from the repository AND pull LFS files
+      # This is important if your project uses Git LFS for large files (e.g., data, models).
       - name: Check out code
         uses: actions/checkout@v3
         with:
-          lfs: true
+          lfs: true # Enables Git LFS support during checkout
 
-      #Step 2: Checking the presence of LFS files
+      # Step 2: Checking the presence of LFS files (Optional - for verification)
+      # This step helps confirm that LFS files were checked out correctly.
       - name: Verify LFS files in workspace
         run: |
           echo "Listing files in workspace:"
-          ls -lh
+          ls -lh # List files with size
           echo "Checking LFS status:"
-          git lfs status # Optional, but can be informative
+          git lfs status # Show status of LFS files
 
-      # Step 3: Set up Docker Buildx (for build multi-platform images)
+      # Step 3: Set up Docker Buildx (for building multi-platform images - might not be strictly needed for basic CI/CD)
+      # Keeps this step from your original as it might be useful later.
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v1 # Use v1 as in original, or v2 as in sample - both work
 
-      # Step 4: Build Docker image
-      - name: Build Docker image
+      # Step 4: Build Docker image for testing
+      # Builds the Docker image based on your Dockerfile.
+      - name: Build Docker image for testing
         run: |
-          docker build -t my-flask-app .
+          docker build -t my-flask-app-test . # Build with a temporary tag for testing
 
-      # Step 5: Run Docker container (Flask app)
-      - name: Run Docker container (Flask app)
+      # Step 5: Run Docker container for testing
+      # Runs the built image in a detached container for testing purposes.
+      - name: Run Docker container for testing
         run: |
-          docker run -d -p 5000:5000 --name flask-app my-flask-app
+          docker run -d -p 5000:5000 --name flask-app-test my-flask-app-test # Run the container
 
-      # Step 5.5: Wait for Flask app to start
+      # Step 5.5: Wait for Flask app to start (Adjust sleep time as needed)
+      # Gives the application inside the container time to start up before running tests.
       - name: Wait for application to start
         run: |
           echo "Waiting for Flask app to be ready..."
-          sleep 15 # Adjust sleep time as needed (e.g., 10, 15, 20 seconds)
+          sleep 15 # Adjust based on how long your app takes to start
 
       # Step 6: Run tests (inside the running container)
+      # Executes your test suite within the running application container. This is a robust test environment.
       - name: Run tests (inside the running container)
         run: |
-          docker exec flask-app pytest  # Execute pytest inside the running container
+          docker exec flask-app-test pytest # Execute pytest inside the running container
 
       # Step 6.5: Get container logs (CRITICAL FOR DEBUGGING)
+      # Displays logs from the container, useful for debugging test failures.
+      # 'if: always()' ensures this step runs even if previous steps (like tests) fail.
       - name: Display Flask App Logs
         if: always() # Run this even if previous steps fail
         run: |
           echo "--- Flask App Logs ---"
-          docker logs flask-app 
+          docker logs flask-app-test
           echo "--- End Flask App Logs ---"
 
       # Step 7: Stop and remove the container after tests
-      - name: Stop Docker container
+      # Cleans up the testing container.
+      - name: Stop and remove testing container
         run: |
-          docker stop flask-app
-          docker rm flask-app
+          docker stop flask-app-test
+          docker rm flask-app-test
 
+  # This job builds the final Docker image and pushes it to AWS ECR.
+  # It depends on the 'test' job passing to ensure we only push working code.
+  build-push-ecr:
+    # This job requires the 'test' job to complete successfully first.
+    needs: test
+    # Runs on a GitHub-hosted Ubuntu runner.
+    runs-on: ubuntu-latest
 
-  build-and-publish:
-      needs: test
-      runs-on: ubuntu-latest
-      steps:
-        - name: Checkout code
-          uses: actions/checkout@v3
-          id: docker_build
-          with:
-            lfs: true
+    # Defines the steps within this job.
+    steps:
+      # Checkout the code
+      - name: Checkout code
+        uses: actions/checkout@v3
+        # Note: LFS might be needed here too if your Dockerfile copies LFS files
 
-        - name: Set up Docker Buildx
-          uses: docker/setup-buildx-action@v2
+      # Configure AWS credentials using the GitHub Action
+      # This step uses secrets stored in your GitHub repository settings.
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
-        - name: Login to DockerHub
-          uses: docker/login-action@v2
-          with:
-            username: ${{ secrets.DOCKER_USERNAME }}
-            password: ${{ secrets.DOCKER_PASSWORD }}
+      # Login to Amazon ECR
+      # This action retrieves temporary credentials and configures Docker to use them.
+      - name: Login to Amazon ECR
+        id: login-ecr # Assign an ID to reference outputs later
+        uses: aws-actions/amazon-ecr-login@v1
 
-        - name: Build and push Docker image
-          uses: docker/build-push-action@v3
-          with:
-            context: .
-            push: true
-            tags: ${{ secrets.DOCKER_USERNAME }}/insurence_flasktest-app:latest
+      # Build, tag, and push image to Amazon ECR
+      # This step uses the registry URI obtained from the login step.
+      - name: Build, tag, and push image to Amazon ECR
+        env:
+          # Use the registry URI output from the login step
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          # Get the ECR repository name from secrets
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY_NAME }}
+          # Define the image tag (e.g., 'latest' or a commit SHA)
+          IMAGE_TAG: latest # You might want to use a more specific tag like github.sha
+        run: |
+          # Build the Docker image, tagging it with the full ECR path and tag
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          # Push the tagged image to ECR
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          # Optional: Set an output with the full image URI if needed by subsequent jobs
+          # Note: ::set-output is deprecated. Use environment files ($GITHUB_OUTPUT).
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+        # Assign an ID to this step if you need to reference its outputs in the future
+        # id: build-image # Uncomment and add if you need to reference outputs
 
-        - name: Image digest
-          run: echo ${{ steps.build-and-publish.outputs.digest }}
+  # This job handles the deployment of the new Docker image to your self-hosted runner.
+  # It depends on the ECR push job completing successfully.
+  deploy:
+    # This job requires the 'build-push-ecr' job to complete successfully.
+    needs: build-push-ecr
+    # This job runs on your self-hosted runner where the application will be deployed.
+    runs-on: self-hosted # Make sure you have a self-hosted runner set up and registered
+
+    # Defines the steps within this job.
+    steps:
+      # Checkout the code (Optional - only needed if deployment scripts/configs are in the repo)
+      # - name: Checkout
+      #   uses: actions/checkout@v3
+
+      # Configure AWS credentials on the self-hosted runner environment
+      # This is needed so the self-hosted runner can pull from ECR.
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      # Login to Amazon ECR on the self-hosted runner
+      # The self-hosted runner needs its own ECR login to pull the image.
+      - name: Login to Amazon ECR
+        id: login-ecr # Assign an ID
+        uses: aws-actions/amazon-ecr-login@v1
+
+      # Define environment variables for the image URI (Optional, but makes commands cleaner)
+      # Get ECR URI from secrets (as used in the sample's deploy step)
+      # Get ECR repository name from secrets
+      # Define the image tag
+      - name: Define Image URI Env Vars
+        shell: bash # Specify shell for multi-line env var setting
+        run: |
+          echo "ECR_REPO_URI=${{ secrets.AWS_ECR_LOGIN_URI }}" >> $GITHUB_ENV
+          echo "ECR_REPOSITORY=${{ secrets.ECR_REPOSITORY_NAME }}" >> $GITHUB_ENV
+          echo "IMAGE_TAG=latest" >> $GITHUB_ENV # Or match the tag used in build-push-ecr
+
+      # Pull the latest image from ECR to the self-hosted runner
+      - name: Pull latest image from ECR
+        run: |
+          docker pull $ECR_REPO_URI/$ECR_REPOSITORY:$IMAGE_TAG
+
+      # Stop and remove the currently running container if it exists
+      # This prevents conflicts when starting the new container.
+      - name: Stop and remove old container if running
+        # Use the sample's robust check
+        run: |
+          CONTAINER_NAME="mltest" # Define the container name
+          # Check if container exists and is running, then stop and remove
+          if docker ps -q --filter "name=$CONTAINER_NAME" | grep -q .; then
+            echo "Stopping existing container $CONTAINER_NAME..."
+            docker stop $CONTAINER_NAME
+            echo "Removing existing container $CONTAINER_NAME..."
+            docker rm -fv $CONTAINER_NAME # -f: force removal, -v: remove volumes
+          else
+            echo "Container $CONTAINER_NAME is not running or does not exist."
+          fi
+
+      # Run the new Docker Image to serve users
+      # Starts the newly pulled image in a detached container.
+      - name: Run New Docker Image
+        run: |
+          CONTAINER_NAME="mltest" # Define the container name
+          # Run the container, mapping ports and passing necessary environment variables (e.g., AWS secrets for app logic)
+          docker run -d \
+            -p 8080:8080 \ # Map host port 8080 to container port 8080
+            --ipc="host" \ # IPC mode (from sample)
+            --name=$CONTAINER_NAME \ # Assign the container name
+            -e 'AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}' \ # Pass AWS ID as env var to container
+            -e 'AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}' \ # Pass AWS secret as env var to container
+            -e 'AWS_REGION=${{ secrets.AWS_REGION }}' \ # Pass AWS region as env var to container
+            $ECR_REPO_URI/$ECR_REPOSITORY:$IMAGE_TAG # The image to run
+
+      # Clean up old Docker images and containers (Optional but recommended)
+      # Removes dangling images and stops containers to free up disk space on the runner.
+      - name: Clean up Docker system
+        run: |
+          docker system prune -a -f --volumes # -a: remove all unused, -f: force, --volumes: remove unused volumes
