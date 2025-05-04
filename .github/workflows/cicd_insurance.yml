@@ -224,22 +224,27 @@ jobs:
             echo "Container $CONTAINER_NAME is not running or does not exist."
           fi
 
-
-
-      # Run the new Docker Image to serve users
-      # Starts the newly pulled image in a detached container.
       - name: Run New Docker Image
         run: |
-          CONTAINER_NAME="insurance_rick_prediction" # Define the container name
-          # Run the container, mapping ports and passing necessary environment variables (e.g., AWS secrets for app logic)
-          docker run -d \
-            -p 8080:8080 \ # Map host port 8080 to container port 8080
-            --ipc="host" \ # IPC mode (from sample)
-             --name="$CONTAINER_NAME" \ # Assign the container name
-            -e 'AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}' \ # Pass AWS ID as env var to container
-            -e 'AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}' \ # Pass AWS secret as env var to container
-            -e 'AWS_REGION=${{ secrets.AWS_REGION }}' \ # Pass AWS region as env var to container
-            "$ECR_REPO_URI/$ECR_REPOSITORY:$IMAGE_TAG"  # The image to run
+               CONTAINER_NAME="insurance_rick_prediction" # Define the container name
+               IMAGE_REFERENCE="$ECR_REPO_URI/$ECR_REPOSITORY:$IMAGE_TAG" # Construct the reference
+      
+               echo "--- Debug: Docker Run Step ---"
+               echo "Raw ECR_REPO_URI: '$ECR_REPO_URI'" # Add this
+               echo "Raw ECR_REPOSITORY: '$ECR_REPOSITORY'" # Add this
+               echo "Raw IMAGE_TAG: '$IMAGE_TAG'" # Add this
+               echo "Constructed Image Reference for docker run: '$IMAGE_REFERENCE'" # Modify previous echo
+               echo "---------------------------------"
+      
+               # Run the container...
+               docker run -d \
+                 -p 8080:8080 \
+                 --ipc="host" \
+                 --name="$CONTAINER_NAME" \
+                 -e 'AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}' \
+                 -e 'AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}' \
+                 -e 'AWS_REGION=${{ secrets.AWS_REGION }}' \
+                 "$IMAGE_REFERENCE"
 
       # Clean up old Docker images and containers (Optional but recommended)
       # Removes dangling images and stops containers to free up disk space on the runner.
