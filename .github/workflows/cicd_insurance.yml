@@ -195,7 +195,7 @@ jobs:
       - name: Stop and remove old container if running
         # Use the sample's robust check
         run: |
-          CONTAINER_NAME="mltest" # Define the container name
+          CONTAINER_NAME="insurance_rick_prediction" # Define the container name
           # Check if container exists and is running, then stop and remove
           if docker ps -q --filter "name=$CONTAINER_NAME" | grep -q .; then
             echo "Stopping existing container $CONTAINER_NAME..."
@@ -210,7 +210,7 @@ jobs:
       # Starts the newly pulled image in a detached container.
       - name: Run New Docker Image
         run: |
-          CONTAINER_NAME="mltest" # Define the container name
+          CONTAINER_NAME="insurance_rick_prediction" # Define the container name
           # Run the container, mapping ports and passing necessary environment variables (e.g., AWS secrets for app logic)
           docker run -d \
             -p 8080:8080 \ # Map host port 8080 to container port 8080
