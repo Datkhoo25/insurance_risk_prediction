@@ -237,7 +237,7 @@ jobs:
             -e 'AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}' \ # Pass AWS ID as env var to container
             -e 'AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}' \ # Pass AWS secret as env var to container
             -e 'AWS_REGION=${{ secrets.AWS_REGION }}' \ # Pass AWS region as env var to container
-            $ECR_REPO_URI/$ECR_REPOSITORY:$IMAGE_TAG # The image to run
+            **"$ECR_REPO_URI/$ECR_REPOSITORY:$IMAGE_TAG"**  # The image to run
 
       # Clean up old Docker images and containers (Optional but recommended)
       # Removes dangling images and stops containers to free up disk space on the runner.
