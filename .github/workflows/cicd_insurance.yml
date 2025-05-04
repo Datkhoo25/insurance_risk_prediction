@@ -10,7 +10,7 @@ on:
     # Ignore pushes that only change the README (optional)
     paths-ignore:
       - 'README.md'
-  # Also trigger on pull requests to the main branch (optional, for CI part)
+  # Also trigger on pull requests to the main branch (optional, for CI part  )
   pull_request:
     branches:
       - main
